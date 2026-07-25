@@ -29,7 +29,7 @@ export function Button({
       type={type}
       disabled={disabled}
       className={[
-        "inline-flex h-10 min-h-10 items-center justify-center gap-2 rounded-md px-4 text-body-md font-medium transition-opacity",
+        "inline-flex h-10 min-h-10 cursor-pointer items-center justify-center gap-2 rounded-md px-4 text-body-md font-medium transition-opacity",
         "disabled:cursor-not-allowed",
         variantClasses[variant],
         className,

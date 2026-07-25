@@ -53,3 +53,12 @@ body {
   font-size: 14px;
   line-height: 1.6;
 }
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
