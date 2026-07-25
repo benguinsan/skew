@@ -40,3 +40,6 @@ jobs:
 
       - name: Build
         run: npm run build
+        
+      - name: Check Dockerfile Build
+        run: docker build -t test-app:latest .
