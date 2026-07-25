@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HeaderAuth } from "@/components/auth/header-auth";
 import { Logo } from "@/components/brand/logo";
 import {
   ChevronDownIcon,
@@ -7,7 +8,6 @@ import {
   GlobeIcon,
   MenuIcon,
 } from "@/components/icons";
-import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Container } from "@/components/ui/container";
 import { TOPIC_CHIPS } from "@/lib/mock-articles";
@@ -131,12 +131,7 @@ export function SiteHeader({
         </div>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <Button variant="primary" className="px-3 sm:px-4">
-            Subscribe
-          </Button>
-          <Button variant="outline" className="px-3 sm:px-4">
-            Login
-          </Button>
+          <HeaderAuth />
         </div>
       </Container>
 
