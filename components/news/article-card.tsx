@@ -10,7 +10,8 @@ export type ArticleCardProps = {
   rightPercentage: number;
   sourceCount: number;
   href?: string;
-  /** Optional tint for placeholder image panel. */
+  imageUrl?: string;
+  /** Optional tint for placeholder image panel when imageUrl is missing. */
   imageTone?: string;
   className?: string;
 };
@@ -24,6 +25,7 @@ export function ArticleCard({
   rightPercentage,
   sourceCount,
   href = "#",
+  imageUrl,
   imageTone = "bg-bg-secondary",
   className = "",
 }: ArticleCardProps) {
@@ -39,6 +41,14 @@ export function ArticleCard({
             imageTone,
           ].join(" ")}
         >
+          {imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- scraped/CDN hosts vary
+            <img
+              src={imageUrl}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            />
+          ) : null}
           <div className="absolute inset-0 bg-linear-to-t from-black/10 to-transparent" />
           <span
             className="absolute right-2.5 top-2.5 text-text-primary drop-shadow-sm"

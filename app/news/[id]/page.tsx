@@ -11,30 +11,31 @@ import { SourceBreakdownCard } from "@/components/news/source-breakdown-card";
 import { BiasMeter } from "@/components/ui/bias-meter";
 import { Container } from "@/components/ui/container";
 import {
-  getMockArticleDetail,
-  getRelatedStories,
-  MOCK_TOP_NEWS,
-} from "@/lib/mock-articles";
+  toArticleDetailView,
+  toRelatedStoryView,
+} from "@/lib/articles/present";
+import {
+  getArticleDetailById,
+  getRelatedAnalyzedArticles,
+} from "@/lib/supabase/queries/articles";
+
+export const dynamic = "force-dynamic";
 
 type NewsDetailsPageProps = {
   params: Promise<{ id: string }>;
 };
 
-export function generateStaticParams() {
-  return MOCK_TOP_NEWS.map((article) => ({ id: article.id }));
-}
-
 export async function generateMetadata({
   params,
 }: NewsDetailsPageProps): Promise<Metadata> {
   const { id } = await params;
-  const article = getMockArticleDetail(id);
-  if (!article) {
+  const detail = await getArticleDetailById(id);
+  if (!detail) {
     return { title: "Article not found · biasly News" };
   }
   return {
-    title: `${article.title} · biasly News`,
-    description: article.analysis.summaryBullets[0],
+    title: `${detail.article.title} · biasly News`,
+    description: detail.analysis.summary,
   };
 }
 
@@ -42,13 +43,15 @@ export default async function NewsDetailsPage({
   params,
 }: NewsDetailsPageProps) {
   const { id } = await params;
-  const article = getMockArticleDetail(id);
+  const detail = await getArticleDetailById(id);
 
-  if (!article) {
+  if (!detail) {
     notFound();
   }
 
-  const related = getRelatedStories(article);
+  const article = toArticleDetailView(detail);
+  const relatedCards = await getRelatedAnalyzedArticles(article.id);
+  const related = relatedCards.map(toRelatedStoryView);
   const sourcesLabel =
     article.sourceCount === 1 ? "1 source" : `${article.sourceCount} sources`;
 
@@ -99,13 +102,14 @@ export default async function NewsDetailsPage({
                 </div>
               </div>
 
-              <div
-                className={[
-                  "mt-6 aspect-2/1 overflow-hidden rounded-lg",
-                  article.imageTone ?? "bg-bg-secondary",
-                ].join(" ")}
-              >
-                <div className="h-full w-full bg-linear-to-t from-black/15 to-transparent" />
+              <div className="relative mt-6 aspect-2/1 overflow-hidden rounded-lg bg-bg-secondary">
+                {/* eslint-disable-next-line @next/next/no-img-element -- scraped/CDN hosts vary */}
+                <img
+                  src={article.imageUrl}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-linear-to-t from-black/15 to-transparent" />
               </div>
               <p className="mt-2 text-caption text-text-secondary">
                 {article.imageCaption}

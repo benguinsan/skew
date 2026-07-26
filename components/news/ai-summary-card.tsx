@@ -1,9 +1,9 @@
 import { ClockIcon, InfoIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
-import type { MockArticleAnalysis } from "@/lib/mock-articles";
+import type { ArticleAnalysisView } from "@/lib/articles/present";
 
 type AiSummaryCardProps = {
-  analysis: MockArticleAnalysis;
+  analysis: ArticleAnalysisView;
 };
 
 export function AiSummaryCard({ analysis }: AiSummaryCardProps) {
