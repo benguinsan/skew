@@ -1,8 +1,8 @@
 import Link from "next/link";
-import type { MockRelatedStory } from "@/lib/mock-articles";
+import type { RelatedStoryView } from "@/lib/articles/present";
 
 type RelatedStoryCardProps = {
-  story: MockRelatedStory;
+  story: RelatedStoryView;
 };
 
 export function RelatedStoryCard({ story }: RelatedStoryCardProps) {
@@ -10,13 +10,18 @@ export function RelatedStoryCard({ story }: RelatedStoryCardProps) {
     <article className="flex gap-3">
       <Link
         href={`/news/${story.id}`}
-        className={[
-          "relative h-20 w-20 shrink-0 overflow-hidden rounded-md",
-          story.imageTone ?? "bg-bg-secondary",
-        ].join(" ")}
+        className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-bg-secondary"
         aria-hidden="true"
         tabIndex={-1}
       >
+        {story.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- scraped/CDN hosts vary
+          <img
+            src={story.imageUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : null}
         <span className="absolute inset-0 bg-linear-to-t from-black/10 to-transparent" />
       </Link>
 

@@ -4,11 +4,11 @@ import {
   biasTextClass,
   dominantPercentage,
   formatBiasLabel,
-  type MockArticleDetail,
-} from "@/lib/mock-articles";
+  type ArticleDetailView,
+} from "@/lib/articles/present";
 
 type BiasAnalysisCardProps = {
-  article: MockArticleDetail;
+  article: ArticleDetailView;
 };
 
 function ProgressRow({

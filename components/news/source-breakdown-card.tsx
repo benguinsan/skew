@@ -3,19 +3,19 @@ import { Button } from "@/components/ui/button";
 import {
   biasTextClass,
   formatBiasLabel,
-  type MockSource,
+  type ArticleSourceItem,
   type SourceBiasLabel,
-} from "@/lib/mock-articles";
+} from "@/lib/articles/present";
 
 type SourceBreakdownCardProps = {
-  sources: MockSource[];
+  sources: ArticleSourceItem[];
   totalSources: number;
   leftPercentage: number;
   centerPercentage: number;
   rightPercentage: number;
 };
 
-function countByBias(sources: MockSource[], label: SourceBiasLabel) {
+function countByBias(sources: ArticleSourceItem[], label: SourceBiasLabel) {
   return sources.filter((source) => source.biasLabel === label).length;
 }
 
@@ -36,7 +36,7 @@ export function SourceBreakdownCard({
         <h2 className="text-h4 font-semibold text-text-primary">
           Source Breakdown
         </h2>
-        <span className="text-text-secondary" title="Mock multi-source panel">
+        <span className="text-text-secondary" title="Source framing panel">
           <InfoIcon />
         </span>
       </div>
