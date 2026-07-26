@@ -54,55 +54,55 @@ Create tables matching AGENTS §7 (+ scheduler tables from §18):
 
 ### `sources`
 
-| Column | Type | Notes |
-| --- | --- | --- |
-| `id` | uuid PK | default `gen_random_uuid()` |
-| `name` | text not null | |
-| `listing_url` | text not null | homepage entry URL only |
-| `parser_strategy` | text null | optional source-specific parser key |
-| `is_active` | boolean not null default true | |
-| `logo_url` | text null | |
-| `created_at` | timestamptz not null default now() | |
-| `updated_at` | timestamptz not null default now() | |
+| Column            | Type                               | Notes                               |
+| ----------------- | ---------------------------------- | ----------------------------------- |
+| `id`              | uuid PK                            | default `gen_random_uuid()`         |
+| `name`            | text not null                      |                                     |
+| `listing_url`     | text not null                      | homepage entry URL only             |
+| `parser_strategy` | text null                          | optional source-specific parser key |
+| `is_active`       | boolean not null default true      |                                     |
+| `logo_url`        | text null                          |                                     |
+| `created_at`      | timestamptz not null default now() |                                     |
+| `updated_at`      | timestamptz not null default now() |                                     |
 
 ### `articles`
 
-| Column | Type | Notes |
-| --- | --- | --- |
-| `id` | uuid PK | |
-| `source_id` | uuid not null FK → sources | on delete restrict |
-| `original_url` | text not null unique | dedupe key |
-| `canonical_url` | text null | unique when present |
-| `title` | text not null | |
-| `image_url` | text not null | required before save |
-| `published_at` | timestamptz not null | required before save |
-| `raw_text` | text not null | cleaned article body |
-| `scraped_at` | timestamptz not null default now() | |
-| `analyzed_at` | timestamptz null | set only after valid analysis saved |
-| `created_at` | timestamptz not null default now() | |
+| Column          | Type                               | Notes                               |
+| --------------- | ---------------------------------- | ----------------------------------- |
+| `id`            | uuid PK                            |                                     |
+| `source_id`     | uuid not null FK → sources         | on delete restrict                  |
+| `original_url`  | text not null unique               | dedupe key                          |
+| `canonical_url` | text null                          | unique when present                 |
+| `title`         | text not null                      |                                     |
+| `image_url`     | text not null                      | required before save                |
+| `published_at`  | timestamptz not null               | required before save                |
+| `raw_text`      | text not null                      | cleaned article body                |
+| `scraped_at`    | timestamptz not null default now() |                                     |
+| `analyzed_at`   | timestamptz null                   | set only after valid analysis saved |
+| `created_at`    | timestamptz not null default now() |                                     |
 
 Indexes: `source_id`, `analyzed_at`, `published_at desc` (homepage ordering).
 
 ### `article_analyses`
 
-| Column | Type | Notes |
-| --- | --- | --- |
-| `id` | uuid PK | |
-| `article_id` | uuid not null unique FK → articles | on delete cascade |
-| `summary` | text not null | neutral summary |
-| `sentiment_score` | numeric not null | −1..1 |
-| `sentiment_label` | text not null | `positive` / `neutral` / `negative` |
-| `bias_score` | numeric not null | `(right − left) / 100` |
-| `bias_label` | text not null | `left` / `center` / `right` / `mixed` / `unclear` |
-| `left_percentage` | numeric not null | 0–100 |
-| `center_percentage` | numeric not null | 0–100 |
-| `right_percentage` | numeric not null | 0–100 |
-| `confidence` | numeric not null | 0–1 |
-| `framing_notes` | text not null | |
-| `loaded_terms` | text[] not null default '{}' | |
-| `disclaimer` | text not null | |
-| `model` | text not null | |
-| `created_at` | timestamptz not null default now() | |
+| Column              | Type                               | Notes                                             |
+| ------------------- | ---------------------------------- | ------------------------------------------------- |
+| `id`                | uuid PK                            |                                                   |
+| `article_id`        | uuid not null unique FK → articles | on delete cascade                                 |
+| `summary`           | text not null                      | neutral summary                                   |
+| `sentiment_score`   | numeric not null                   | −1..1                                             |
+| `sentiment_label`   | text not null                      | `positive` / `neutral` / `negative`               |
+| `bias_score`        | numeric not null                   | `(right − left) / 100`                            |
+| `bias_label`        | text not null                      | `left` / `center` / `right` / `mixed` / `unclear` |
+| `left_percentage`   | numeric not null                   | 0–100                                             |
+| `center_percentage` | numeric not null                   | 0–100                                             |
+| `right_percentage`  | numeric not null                   | 0–100                                             |
+| `confidence`        | numeric not null                   | 0–1                                               |
+| `framing_notes`     | text not null                      |                                                   |
+| `loaded_terms`      | text[] not null default '{}'       |                                                   |
+| `disclaimer`        | text not null                      |                                                   |
+| `model`             | text not null                      |                                                   |
+| `created_at`        | timestamptz not null default now() |                                                   |
 
 Check constraints (recommended): sentiment/bias/confidence ranges; percentages 0–100; optional check that percentages sum to 100 (allow small float slack or enforce exact if using integers — prefer `integer` 0–100 for percentages if that simplifies UI).
 
@@ -112,36 +112,36 @@ Check constraints (recommended): sentiment/bias/confidence ranges; percentages 0
 
 Minimal pipeline log store for later `GET /api/logs`:
 
-| Column | Type | Notes |
-| --- | --- | --- |
-| `id` | uuid PK | |
-| `level` | text not null | e.g. `info` / `warn` / `error` |
-| `message` | text not null | |
-| `context` | jsonb not null default '{}' | structured details |
-| `created_at` | timestamptz not null default now() | |
+| Column       | Type                               | Notes                          |
+| ------------ | ---------------------------------- | ------------------------------ |
+| `id`         | uuid PK                            |                                |
+| `level`      | text not null                      | e.g. `info` / `warn` / `error` |
+| `message`    | text not null                      |                                |
+| `context`    | jsonb not null default '{}'        | structured details             |
+| `created_at` | timestamptz not null default now() |                                |
 
 Index on `created_at desc`.
 
 ### `oxylabs_schedules`
 
-| Column | Type | Notes |
-| --- | --- | --- |
-| `id` | uuid PK | |
-| `source_id` | uuid not null unique FK → sources | one schedule per source |
-| `oxylabs_schedule_id` | text not null unique | stringified large int |
-| `is_active` | boolean not null default true | |
-| `created_at` / `updated_at` | timestamptz | |
+| Column                      | Type                              | Notes                   |
+| --------------------------- | --------------------------------- | ----------------------- |
+| `id`                        | uuid PK                           |                         |
+| `source_id`                 | uuid not null unique FK → sources | one schedule per source |
+| `oxylabs_schedule_id`       | text not null unique              | stringified large int   |
+| `is_active`                 | boolean not null default true     |                         |
+| `created_at` / `updated_at` | timestamptz                       |                         |
 
 ### `oxylabs_schedule_runs`
 
-| Column | Type | Notes |
-| --- | --- | --- |
-| `id` | uuid PK | |
-| `schedule_id` | uuid not null FK → oxylabs_schedules | |
-| `oxylabs_job_id` | text not null | stringified large int |
-| `result_status` | text not null | e.g. `done` / `pending` / `faulted` |
-| `processed_at` | timestamptz null | when pipeline processed this job |
-| `created_at` | timestamptz not null default now() | |
+| Column           | Type                                 | Notes                               |
+| ---------------- | ------------------------------------ | ----------------------------------- |
+| `id`             | uuid PK                              |                                     |
+| `schedule_id`    | uuid not null FK → oxylabs_schedules |                                     |
+| `oxylabs_job_id` | text not null                        | stringified large int               |
+| `result_status`  | text not null                        | e.g. `done` / `pending` / `faulted` |
+| `processed_at`   | timestamptz null                     | when pipeline processed this job    |
+| `created_at`     | timestamptz not null default now()   |                                     |
 
 Unique on `(schedule_id, oxylabs_job_id)`. Index on `result_status`, `processed_at`.
 
