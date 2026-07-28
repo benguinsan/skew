@@ -27,12 +27,12 @@ Do **not** implement Oxylabs Scheduler, Vercel Cron, AI analysis, embeddings, or
 - **No** Cheerio / Zod in `package.json` yet — add them
 - **Seeded active sources in Supabase** (queried live):
 
-  | Name         | listing_url                          | parser_strategy |
-  | ------------ | ------------------------------------ | --------------- |
-  | BBC          | https://www.bbc.com/news             | null            |
-  | CNN          | https://www.cnn.com                  | null            |
-  | Fox News     | https://www.foxnews.com              | null            |
-  | The Guardian | https://www.theguardian.com/us       | null            |
+  | Name         | listing_url                    | parser_strategy |
+  | ------------ | ------------------------------ | --------------- |
+  | BBC          | https://www.bbc.com/news       | null            |
+  | CNN          | https://www.cnn.com            | null            |
+  | Fox News     | https://www.foxnews.com        | null            |
+  | The Guardian | https://www.theguardian.com/us | null            |
 
 - `.env.local` already has `OXY_WSA_*` and `BIASLY_ADMIN_SECRET`; `.env.example` still comments them out
 - UI still on `lib/mock-articles.ts` — leave pages unchanged
@@ -80,23 +80,23 @@ Do **not** implement Oxylabs Scheduler, Vercel Cron, AI analysis, embeddings, or
 
 ## Files likely to change / create
 
-| Path | Action |
-| ---- | ------ |
-| `package.json` / lockfile | add cheerio, zod, server-only |
-| `.env.example` | uncomment/document `OXY_WSA_USERNAME`, `OXY_WSA_PASSWORD`, `BIASLY_ADMIN_SECRET` |
-| `lib/oxylabs/client.ts` | Realtime scrape helper |
-| `lib/oxylabs/env.ts` | read Oxylabs env vars |
-| `lib/auth/admin.ts` (or `lib/api/admin-secret.ts`) | admin header check |
-| `lib/parsing/urls.ts` | normalize, tracking strip, absolute resolve |
-| `lib/parsing/reject.ts` | non-article reject helpers |
-| `lib/parsing/homepage.ts` | extract candidate links (+ strategy dispatch) |
-| `lib/parsing/article.ts` | detail parse: title, image, date, body cleanup/validate |
-| `lib/parsing/strategies/*.ts` | bbc/cnn/fox/guardian URL + selector tweaks |
-| `lib/pipeline/scrape.ts` | scrape-to-insert orchestration + summary types |
-| `lib/pipeline/types.ts` | typed run summary / counters |
-| `app/api/scrape/route.ts` | `POST` |
-| `app/api/sources/route.ts` | `GET` active sources |
-| `app/api/logs/route.ts` | `GET` recent logs (admin-secret protected) |
+| Path                                               | Action                                                                           |
+| -------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `package.json` / lockfile                          | add cheerio, zod, server-only                                                    |
+| `.env.example`                                     | uncomment/document `OXY_WSA_USERNAME`, `OXY_WSA_PASSWORD`, `BIASLY_ADMIN_SECRET` |
+| `lib/oxylabs/client.ts`                            | Realtime scrape helper                                                           |
+| `lib/oxylabs/env.ts`                               | read Oxylabs env vars                                                            |
+| `lib/auth/admin.ts` (or `lib/api/admin-secret.ts`) | admin header check                                                               |
+| `lib/parsing/urls.ts`                              | normalize, tracking strip, absolute resolve                                      |
+| `lib/parsing/reject.ts`                            | non-article reject helpers                                                       |
+| `lib/parsing/homepage.ts`                          | extract candidate links (+ strategy dispatch)                                    |
+| `lib/parsing/article.ts`                           | detail parse: title, image, date, body cleanup/validate                          |
+| `lib/parsing/strategies/*.ts`                      | bbc/cnn/fox/guardian URL + selector tweaks                                       |
+| `lib/pipeline/scrape.ts`                           | scrape-to-insert orchestration + summary types                                   |
+| `lib/pipeline/types.ts`                            | typed run summary / counters                                                     |
+| `app/api/scrape/route.ts`                          | `POST`                                                                           |
+| `app/api/sources/route.ts`                         | `GET` active sources                                                             |
+| `app/api/logs/route.ts`                            | `GET` recent logs (admin-secret protected)                                       |
 
 Optional: small SQL note or seed update to set `parser_strategy` on the four sources — not required if hostname fallback works.
 
