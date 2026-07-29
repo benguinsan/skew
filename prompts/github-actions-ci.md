@@ -31,7 +31,8 @@ Add a GitHub Actions workflow that runs the project's standard quality checks on
    6. `npm run format:check`
    7. `npm run build`
 4. **Concurrency** — cancel in-progress runs for the same branch/ref to save Actions minutes.
-5. **No secrets in workflow** — do not reference `BIASLY_ADMIN_SECRET`, Oxylabs, OpenAI, or service-role keys.
+5. **No secrets in workflow** — do not reference `BIASLY_ADMIN_SECRET`, Oxylabs, OpenRouter, or service-role keys.
+   <!-- Previously also listed: OpenAI -->
 6. **File path** — `.github/workflows/ci.yml`
 
 ## Files likely to change

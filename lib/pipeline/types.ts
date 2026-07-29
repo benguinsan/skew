@@ -29,3 +29,30 @@ export type ScrapePipelineOptions = {
 
 export const DEFAULT_PER_SOURCE_LIMIT = 5;
 export const MAX_PER_SOURCE_LIMIT = 20;
+
+export type AnalyzeRunStatus = "completed" | "failed";
+
+export type AnalyzeRunError = {
+  articleId?: string;
+  message: string;
+};
+
+export type AnalyzeRunSummary = {
+  status: AnalyzeRunStatus;
+  pendingFound: number;
+  analyzed: number;
+  skipped: number;
+  failed: number;
+  batches: number;
+  model: string;
+  totalDurationMs: number;
+  errors?: AnalyzeRunError[];
+};
+
+export type AnalyzePipelineOptions = {
+  articleIds?: string[];
+  /** Max articles to analyze this run (optional; omit = all pending). */
+  limit?: number;
+  /** Override ANALYSIS_BATCH_SIZE for this run. */
+  batchSize?: number;
+};
