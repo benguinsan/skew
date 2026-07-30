@@ -70,7 +70,8 @@ Use them for:
 - `clerk`: authentication and protected routes
 - `supabase`: schema, migrations, queries, service role usage, dedupe, logs, pgvector
 - `oxylabs-web-scraper`: Oxylabs Web Scraper API, Scheduler, scheduled jobs, scraping behavior
-- `ai-sdk`: Vercel AI SDK and OpenAI provider usage, model calls, AI analysis output handling
+- `ai-sdk`: Vercel AI SDK and OpenRouter provider usage, model calls, AI analysis output handling
+- <!-- `ai-sdk`: Vercel AI SDK and OpenAI provider usage, model calls, AI analysis output handling -->
 
 Do not invent new skills.
 
@@ -134,7 +135,8 @@ Use:
 - Oxylabs Scheduler
 - Cheerio
 - Vercel AI SDK
-- OpenAI provider
+- OpenRouter provider (AI analysis + embeddings via OpenRouter model ids)
+- <!-- OpenAI provider -->
 - Zod
 - Tailwind CSS
 - shadcn/ui
@@ -546,6 +548,17 @@ Do not hardcode analysis to:
 
 Batching is allowed only to avoid timeouts.
 
+## Model provider (OpenRouter)
+
+Use **OpenRouter** for AI analysis (not the OpenAI API direct).
+
+- Authenticate with `OPENROUTER_API_KEY` (server only).
+- Set the analysis model via `OPENROUTER_ANALYSIS_MODEL` (OpenRouter model id, e.g. `openai/gpt-oss-20b:free` for dev or `openai/gpt-4o-mini` via OpenRouter for production).
+- Use Vercel AI SDK with an OpenRouter-compatible provider (e.g. `@openrouter/ai-sdk-provider`).
+- Save the exact OpenRouter model id string to `article_analyses.model`.
+- OpenRouter can route **OpenAI-hosted models** (ids like `openai/...`) without a separate OpenAI API key.
+- <!-- Previously: OpenAI provider + `OPENAI_API_KEY` direct to platform.openai.com. -->
+
 Each analysis must include and save to `article_analyses`:
 
 - neutral summary â†’ `summary`
@@ -609,7 +622,8 @@ This section is implemented after AI analysis is working (section 19). pgvector 
 
 Enable pgvector in Supabase Dashboard under Database Extensions. Then add an `embedding vector(1536)` column to `article_analyses` and create an IVFFlat cosine index on it via the SQL Editor. Update `supabase/schema.sql`, `lib/supabase/types.ts`, and run the ALTER SQL before testing.
 
-Update the `/api/analyze` route to also call OpenAI text-embedding-3-small for each article alongside the existing analysis call and save the result to `article_analyses.embedding`. Update `analyzed_at` only after both analysis and embedding are saved. Because pending detection uses LEFT JOIN logic (see section 19), articles whose `article_analyses` row exists but has `embedding IS NULL` will automatically be picked up for embedding backfill on the next run without re-running the full analysis.
+Update the `/api/analyze` route to also call an OpenRouter embedding model for each article alongside the existing analysis call and save the result to `article_analyses.embedding`. Default embedding model: `openai/text-embedding-3-small` via OpenRouter (1536 dimensions — match the pgvector column). Set via `OPENROUTER_EMBEDDING_MODEL` when needed. Update `analyzed_at` only after both analysis and embedding are saved. Because pending detection uses LEFT JOIN logic (see section 19), articles whose `article_analyses` row exists but has `embedding IS NULL` will automatically be picked up for embedding backfill on the next run without re-running the full analysis.
+<!-- Previously: call OpenAI `text-embedding-3-small` direct via `OPENAI_API_KEY`. -->
 
 To find related articles, query `article_analyses` joined to `articles` and `sources`, filter to rows where the embedding is not null and the article is analyzed and is not the current article, then order by cosine distance (`<=>`) to the current article's embedding and limit to 5 results.
 
@@ -625,13 +639,15 @@ Never expose to browser code:
 
 - Supabase service role key
 - Oxylabs credentials
-- OpenAI credentials
+- OpenRouter credentials
+- <!-- OpenAI credentials -->
 - scheduler/admin secrets
 
 Never run from browser code:
 
 - Oxylabs calls
-- OpenAI/model calls
+- OpenRouter / model calls
+- <!-- OpenAI/model calls -->
 - scraping
 - analysis
 - scheduler processing
@@ -649,12 +665,16 @@ Canonical list lives in `.env.example`. Only `NEXT_PUBLIC_*` values may reach br
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY`                                               | Supabase anon key                                                                       | client + server |
 | `SUPABASE_SERVICE_ROLE_KEY`                                                   | Service-role DB access for writes and pipeline reads                                    | server only     |
 | `OXY_WSA_USERNAME` / `OXY_WSA_PASSWORD`                                       | Oxylabs Web Scraper API + Scheduler auth                                                | server only     |
-| `OPENAI_API_KEY`                                                              | AI analysis and `text-embedding-3-small`                                                | server only     |
+| `OPENROUTER_API_KEY`                                                          | OpenRouter auth for AI analysis and embeddings                                          | server only     |
+| `OPENROUTER_ANALYSIS_MODEL`                                                   | OpenRouter model id for analysis (e.g. `openai/gpt-oss-20b:free`, `openai/gpt-4o-mini`) | server only     |
+| `OPENROUTER_EMBEDDING_MODEL`                                                  | Optional; OpenRouter embedding model (default `openai/text-embedding-3-small`, §20)     | server only     |
 | `BIASLY_ADMIN_SECRET`                                                         | Shared secret for `x-biasly-admin-secret` on action routes (section 15)                 | server only     |
 | `ANALYSIS_BATCH_SIZE`                                                         | Optional; articles analyzed per batch (default 5)                                       | server only     |
 | `CRON_SECRET`                                                                 | Protects `GET /api/cron/pipeline`; injected by Vercel, not in `.env.local` (section 18) | server only     |
 
 Keep this table and `.env.example` in sync when variables change.
+
+<!-- Previously: `OPENAI_API_KEY` — AI analysis and `text-embedding-3-small` direct via platform.openai.com -->
 
 Use TypeScript.
 
