@@ -27,19 +27,19 @@ Do **not** implement Oxylabs Scheduler / Vercel Cron in this task. Do not redesi
 
 ## Existing code inspected
 
-| Area | Status |
-| ---- | ------ |
-| `supabase/schema.sql` | Has `article_analyses` **without** `embedding`; comment says pgvector comes after AI analysis |
-| `supabase/README.md` | Lists embedding as out of scope |
-| `lib/supabase/types.ts` | `article_analyses` Row/Insert/Update lack `embedding`; `Database.Functions` empty |
-| `lib/supabase/queries/analyses.ts` | Pending = no analysis row only — **must extend** for `embedding IS NULL` backfill |
-| `lib/supabase/queries/articles.ts` | Temporary `getRelatedAnalyzedArticles` (home-feed slice) — replace with real similarity |
-| `lib/ai/analyze-article.ts` | Analysis + upsert + `markArticleAnalyzed` — no embedding yet |
-| `lib/ai/client.ts` / `env.ts` | Analysis model only; embedding model env commented in `.env.example` |
-| `lib/pipeline/analyze.ts` | Batches pending articles via analyses queries |
-| `app/news/[id]/page.tsx` | Related Stories already rendered when `related.length > 0`; still uses stub query |
-| `components/news/related-story-card.tsx` | Ready; no UI redesign needed |
-| Packages | `ai` + `@openrouter/ai-sdk-provider` already installed; OpenRouter exposes `textEmbeddingModel` |
+| Area                                     | Status                                                                                          |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `supabase/schema.sql`                    | Has `article_analyses` **without** `embedding`; comment says pgvector comes after AI analysis   |
+| `supabase/README.md`                     | Lists embedding as out of scope                                                                 |
+| `lib/supabase/types.ts`                  | `article_analyses` Row/Insert/Update lack `embedding`; `Database.Functions` empty               |
+| `lib/supabase/queries/analyses.ts`       | Pending = no analysis row only — **must extend** for `embedding IS NULL` backfill               |
+| `lib/supabase/queries/articles.ts`       | Temporary `getRelatedAnalyzedArticles` (home-feed slice) — replace with real similarity         |
+| `lib/ai/analyze-article.ts`              | Analysis + upsert + `markArticleAnalyzed` — no embedding yet                                    |
+| `lib/ai/client.ts` / `env.ts`            | Analysis model only; embedding model env commented in `.env.example`                            |
+| `lib/pipeline/analyze.ts`                | Batches pending articles via analyses queries                                                   |
+| `app/news/[id]/page.tsx`                 | Related Stories already rendered when `related.length > 0`; still uses stub query               |
+| `components/news/related-story-card.tsx` | Ready; no UI redesign needed                                                                    |
+| Packages                                 | `ai` + `@openrouter/ai-sdk-provider` already installed; OpenRouter exposes `textEmbeddingModel` |
 
 ## Decisions / assumptions
 

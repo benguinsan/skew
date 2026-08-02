@@ -656,21 +656,21 @@ Never run from browser code:
 
 Canonical list lives in `.env.example`. Only `NEXT_PUBLIC_*` values may reach browser code; everything else is server-only. `CRON_SECRET` is injected by Vercel and must not be added to `.env.local`.
 
-| Variable                                                                      | Purpose                                                                                 | Exposure        |
-| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------- |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`                                           | Clerk publishable key                                                                   | client + server |
-| `CLERK_SECRET_KEY`                                                            | Clerk server-side key                                                                   | server only     |
-| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` / `_SIGN_UP_URL` / `_*_FALLBACK_REDIRECT_URL` | Clerk auth route config                                                                 | client + server |
-| `NEXT_PUBLIC_SUPABASE_URL`                                                    | Supabase project URL                                                                    | client + server |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`                                               | Supabase anon key                                                                       | client + server |
-| `SUPABASE_SERVICE_ROLE_KEY`                                                   | Service-role DB access for writes and pipeline reads                                    | server only     |
-| `OXY_WSA_USERNAME` / `OXY_WSA_PASSWORD`                                       | Oxylabs Web Scraper API + Scheduler auth                                                | server only     |
-| `OPENROUTER_API_KEY`                                                          | OpenRouter auth for AI analysis and embeddings                                          | server only     |
-| `OPENROUTER_ANALYSIS_MODEL`                                                   | OpenRouter model id for analysis (e.g. `openai/gpt-oss-20b:free`, `openai/gpt-4o-mini`) | server only     |
+| Variable                                                                      | Purpose                                                                                        | Exposure        |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | --------------- |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`                                           | Clerk publishable key                                                                          | client + server |
+| `CLERK_SECRET_KEY`                                                            | Clerk server-side key                                                                          | server only     |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` / `_SIGN_UP_URL` / `_*_FALLBACK_REDIRECT_URL` | Clerk auth route config                                                                        | client + server |
+| `NEXT_PUBLIC_SUPABASE_URL`                                                    | Supabase project URL                                                                           | client + server |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`                                               | Supabase anon key                                                                              | client + server |
+| `SUPABASE_SERVICE_ROLE_KEY`                                                   | Service-role DB access for writes and pipeline reads                                           | server only     |
+| `OXY_WSA_USERNAME` / `OXY_WSA_PASSWORD`                                       | Oxylabs Web Scraper API + Scheduler auth                                                       | server only     |
+| `OPENROUTER_API_KEY`                                                          | OpenRouter auth for AI analysis and embeddings                                                 | server only     |
+| `OPENROUTER_ANALYSIS_MODEL`                                                   | OpenRouter model id for analysis (e.g. `openai/gpt-oss-20b:free`, `openai/gpt-4o-mini`)        | server only     |
 | `OPENROUTER_EMBEDDING_MODEL`                                                  | Optional; OpenRouter embedding model (default `openai/text-embedding-3-small`, 1536 dims, §20) | server only     |
-| `BIASLY_ADMIN_SECRET`                                                         | Shared secret for `x-biasly-admin-secret` on action routes (section 15)                 | server only     |
-| `ANALYSIS_BATCH_SIZE`                                                         | Optional; articles analyzed per batch (default 5)                                       | server only     |
-| `CRON_SECRET`                                                                 | Protects `GET /api/cron/pipeline`; injected by Vercel, not in `.env.local` (section 18) | server only     |
+| `BIASLY_ADMIN_SECRET`                                                         | Shared secret for `x-biasly-admin-secret` on action routes (section 15)                        | server only     |
+| `ANALYSIS_BATCH_SIZE`                                                         | Optional; articles analyzed per batch (default 5)                                              | server only     |
+| `CRON_SECRET`                                                                 | Protects `GET /api/cron/pipeline`; injected by Vercel, not in `.env.local` (section 18)        | server only     |
 
 Keep this table and `.env.example` in sync when variables change.
 
