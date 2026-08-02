@@ -11,19 +11,36 @@ import {
   URL_EXISTENCE_CHUNK_SIZE,
 } from "@/lib/supabase/queries/helpers";
 
-export type PendingAnalysisArticle = Article;
+/** full = missing analysis row; embedding = analysis exists but embedding is null. */
+export type PendingAnalysisMode = "full" | "embedding";
+
+export type PendingAnalysisArticle = Article & {
+  mode: PendingAnalysisMode;
+};
 
 const PENDING_SCAN_PAGE_SIZE = 50;
 
 type ArticleWithAnalyses = Article & {
-  article_analyses: { id: string } | { id: string }[] | null;
+  article_analyses:
+    | { id: string; embedding: number[] | string | null }
+    | { id: string; embedding: number[] | string | null }[]
+    | null;
 };
 
 function unwrapAnalyses(
   value: ArticleWithAnalyses["article_analyses"],
-): { id: string }[] {
+): { id: string; embedding: number[] | string | null }[] {
   if (value == null) return [];
   return Array.isArray(value) ? value : [value];
+}
+
+function hasEmbedding(
+  embedding: number[] | string | null | undefined,
+): boolean {
+  if (embedding == null) return false;
+  if (Array.isArray(embedding)) return embedding.length > 0;
+  if (typeof embedding === "string") return embedding.trim().length > 0;
+  return false;
 }
 
 function toArticle(row: ArticleWithAnalyses): Article {
@@ -42,17 +59,23 @@ function toArticle(row: ArticleWithAnalyses): Article {
   };
 }
 
-function isPending(row: ArticleWithAnalyses): boolean {
-  return unwrapAnalyses(row.article_analyses).length === 0;
+function toPending(row: ArticleWithAnalyses): PendingAnalysisArticle | null {
+  const analyses = unwrapAnalyses(row.article_analyses);
+  if (analyses.length === 0) {
+    return { ...toArticle(row), mode: "full" };
+  }
+  if (!hasEmbedding(analyses[0]?.embedding)) {
+    return { ...toArticle(row), mode: "embedding" };
+  }
+  return null;
 }
 
 /**
- * Pending = no `article_analyses` row (LEFT JOIN semantics).
- * Do not rely on `analyzed_at IS NULL` alone (AGENTS §19).
+ * Pending = no `article_analyses` row, OR analysis exists with null embedding
+ * (AGENTS §19 + §20 backfill). Do not rely on `analyzed_at IS NULL` alone.
  *
  * Pages through articles ordered by scraped_at until `limit` pending rows
- * are collected or the table is exhausted — avoids empty batches when the
- * oldest N articles already have analyses.
+ * are collected or the table is exhausted.
  *
  * `excludeIds` skips articles already attempted in the current run
  * (failed/skipped rows that are still pending in the DB).
@@ -75,7 +98,7 @@ export async function getArticlesPendingAnalysis(
       .select(
         `
         *,
-        article_analyses ( id )
+        article_analyses ( id, embedding )
       `,
       )
       .order("scraped_at", { ascending: true })
@@ -89,9 +112,10 @@ export async function getArticlesPendingAnalysis(
     }
 
     for (const row of rows) {
-      if (!isPending(row)) continue;
       if (excludeIds?.has(row.id)) continue;
-      pending.push(toArticle(row));
+      const item = toPending(row);
+      if (!item) continue;
+      pending.push(item);
       if (pending.length >= limit) break;
     }
 
@@ -105,7 +129,7 @@ export async function getArticlesPendingAnalysis(
 }
 
 /**
- * Load specific articles and keep only those still missing an analysis row.
+ * Load specific articles and keep only those still missing analysis or embedding.
  */
 export async function getPendingArticlesByIds(
   articleIds: string[],
@@ -124,7 +148,7 @@ export async function getPendingArticlesByIds(
       .select(
         `
         *,
-        article_analyses ( id )
+        article_analyses ( id, embedding )
       `,
       )
       .in("id", chunk);
@@ -133,8 +157,9 @@ export async function getPendingArticlesByIds(
 
     const rows = (data ?? []) as ArticleWithAnalyses[];
     for (const row of rows) {
-      if (isPending(row)) {
-        pending.push(toArticle(row));
+      const item = toPending(row);
+      if (item) {
+        pending.push(item);
       }
     }
   }
@@ -172,4 +197,18 @@ export async function upsertAnalysis(
 
   throwOnError(error, "upsertAnalysis");
   return requireData(data, "upsertAnalysis");
+}
+
+/** Embedding-only backfill — does not touch analysis text fields. */
+export async function updateAnalysisEmbedding(
+  articleId: string,
+  embedding: number[],
+): Promise<void> {
+  const supabase = createServiceClient();
+  const { error } = await supabase
+    .from("article_analyses")
+    .update({ embedding })
+    .eq("article_id", articleId);
+
+  throwOnError(error, "updateAnalysisEmbedding");
 }

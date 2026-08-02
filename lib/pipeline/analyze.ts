@@ -6,9 +6,9 @@ import { getAnalysisBatchSize, MAX_ANALYSIS_BATCH_SIZE } from "@/lib/ai/env";
 import {
   getArticlesPendingAnalysis,
   getPendingArticlesByIds,
+  type PendingAnalysisArticle,
 } from "@/lib/supabase/queries/analyses";
 import { insertLog } from "@/lib/supabase/queries/logs";
-import type { Article } from "@/lib/supabase/types";
 import type {
   AnalyzePipelineOptions,
   AnalyzeRunError,
@@ -45,7 +45,7 @@ async function loadNextBatch(
   options: AnalyzePipelineOptions,
   batchSize: number,
   excludeIds: Set<string>,
-): Promise<Article[]> {
+): Promise<PendingAnalysisArticle[]> {
   if (options.articleIds && options.articleIds.length > 0) {
     const pending = await getPendingArticlesByIds(options.articleIds);
     return pending.filter((a) => !excludeIds.has(a.id)).slice(0, batchSize);
@@ -55,7 +55,8 @@ async function loadNextBatch(
 }
 
 /**
- * Analyze all pending articles (or a subset) in batches (AGENTS §19).
+ * Analyze all pending articles (or a subset) in batches (AGENTS §19–20).
+ * Pending includes missing analysis rows and analysis rows with null embedding.
  * Failed/skipped articles are excluded for the rest of the run so they
  * are not retried in a tight loop (they remain pending in the DB).
  */
@@ -144,10 +145,10 @@ export async function runAnalyzePending(
       for (const article of batch) {
         excludeIds.add(article.id);
         console.log(
-          `[analyze] processing article=${article.id} "${titleSnippet(article.title)}"`,
+          `[analyze] processing article=${article.id} mode=${article.mode} "${titleSnippet(article.title)}"`,
         );
 
-        const result = await analyzeAndSaveArticle(article);
+        const result = await analyzeAndSaveArticle(article, article.mode);
         if (result.ok) {
           analyzed += 1;
         } else if (result.reason === "skipped") {

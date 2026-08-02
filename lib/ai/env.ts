@@ -18,6 +18,22 @@ export function getOpenRouterAnalysisModel(): string {
   return requireEnv("OPENROUTER_ANALYSIS_MODEL");
 }
 
+/** Default OpenRouter embedding model (1536 dims — matches pgvector column). */
+export const DEFAULT_OPENROUTER_EMBEDDING_MODEL =
+  "openai/text-embedding-3-small";
+
+/**
+ * OpenRouter embedding model id. Optional env; defaults to text-embedding-3-small.
+ * Must output 1536 dims (Supabase vector indexes cap at 2000).
+ */
+export function getOpenRouterEmbeddingModel(): string {
+  const raw = process.env.OPENROUTER_EMBEDDING_MODEL?.trim();
+  if (!raw) {
+    return DEFAULT_OPENROUTER_EMBEDDING_MODEL;
+  }
+  return raw;
+}
+
 export const DEFAULT_ANALYSIS_BATCH_SIZE = 5;
 export const MAX_ANALYSIS_BATCH_SIZE = 20;
 

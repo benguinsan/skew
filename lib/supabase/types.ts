@@ -115,6 +115,8 @@ export type Database = {
           loaded_terms: string[];
           disclaimer: string;
           model: string;
+          /** 1536-dim OpenRouter embedding; null until generated. */
+          embedding: number[] | null;
           created_at: string;
         };
         Insert: {
@@ -133,6 +135,7 @@ export type Database = {
           loaded_terms?: string[];
           disclaimer: string;
           model: string;
+          embedding?: number[] | null;
           created_at?: string;
         };
         Update: {
@@ -151,6 +154,7 @@ export type Database = {
           loaded_terms?: string[];
           disclaimer?: string;
           model?: string;
+          embedding?: number[] | null;
           created_at?: string;
         };
         Relationships: [
@@ -259,7 +263,28 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      match_related_articles: {
+        Args: {
+          query_embedding: number[];
+          exclude_article_id: string;
+          match_count?: number;
+        };
+        Returns: {
+          id: string;
+          title: string;
+          image_url: string;
+          published_at: string;
+          source_name: string;
+          sentiment_label: SentimentLabel;
+          bias_label: BiasLabel;
+          left_percentage: number;
+          center_percentage: number;
+          right_percentage: number;
+          confidence: number;
+        }[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

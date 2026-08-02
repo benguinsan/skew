@@ -156,7 +156,14 @@ export async function getArticleDetailById(
     created_at: data.created_at,
   };
 
-  return { article, source, analysis };
+  return {
+    article,
+    source,
+    analysis: {
+      ...analysis,
+      embedding: parseEmbedding(analysis.embedding as number[] | string | null),
+    },
+  };
 }
 
 /**
@@ -215,11 +222,81 @@ export async function markArticleAnalyzed(
   throwOnError(error, "markArticleAnalyzed");
 }
 
-/** Temporary related stories until pgvector similarity lands (AGENTS §20). */
-export async function getRelatedAnalyzedArticles(
+/**
+ * Normalize a pgvector value from PostgREST (number[] or "[...]" string).
+ */
+export function parseEmbedding(
+  value: number[] | string | null | undefined,
+): number[] | null {
+  if (value == null) return null;
+  if (Array.isArray(value)) {
+    return value.length > 0 ? value.map(Number) : null;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    try {
+      const parsed: unknown = JSON.parse(
+        trimmed.startsWith("[") ? trimmed : `[${trimmed}]`,
+      );
+      if (!Array.isArray(parsed) || parsed.length === 0) return null;
+      return parsed.map(Number);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+const DEFAULT_RELATED_LIMIT = 5;
+
+type RelatedMatchRow = {
+  id: string;
+  title: string;
+  image_url: string;
+  published_at: string;
+  source_name: string;
+  sentiment_label: HomeArticleCard["sentimentLabel"];
+  bias_label: HomeArticleCard["biasLabel"];
+  left_percentage: number;
+  center_percentage: number;
+  right_percentage: number;
+  confidence: number;
+};
+
+/**
+ * Related articles by cosine distance via match_related_articles RPC (AGENTS §20).
+ */
+export async function getRelatedArticles(
   articleId: string,
-  limit = 6,
+  embedding: number[],
+  limit = DEFAULT_RELATED_LIMIT,
 ): Promise<HomeArticleCard[]> {
-  const cards = await getAnalyzedArticlesForHome(limit + 4);
-  return cards.filter((card) => card.id !== articleId).slice(0, limit);
+  if (!embedding.length || limit <= 0) {
+    return [];
+  }
+
+  const supabase = createServiceClient();
+  const { data, error } = await supabase.rpc("match_related_articles", {
+    query_embedding: embedding,
+    exclude_article_id: articleId,
+    match_count: Math.min(Math.max(1, Math.floor(limit)), 20),
+  });
+
+  throwOnError(error, "getRelatedArticles");
+
+  const rows = (data ?? []) as RelatedMatchRow[];
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    sourceName: row.source_name,
+    imageUrl: row.image_url,
+    publishedAt: row.published_at,
+    sentimentLabel: row.sentiment_label,
+    biasLabel: row.bias_label,
+    leftPercentage: row.left_percentage,
+    centerPercentage: row.center_percentage,
+    rightPercentage: row.right_percentage,
+    confidence: Number(row.confidence),
+  }));
 }
