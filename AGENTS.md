@@ -620,9 +620,9 @@ Framing output rules:
 
 This section is implemented after AI analysis is working (section 19). pgvector upgrades the analysis pipeline to also generate embeddings and powers a Related Articles feature on the news details page.
 
-Enable pgvector in Supabase Dashboard under Database Extensions. Then add an `embedding vector(1536)` column to `article_analyses` and create an IVFFlat cosine index on it via the SQL Editor. Update `supabase/schema.sql`, `lib/supabase/types.ts`, and run the ALTER SQL before testing.
+Enable pgvector in Supabase Dashboard under Database Extensions. Then add an `embedding vector(1536)` column to `article_analyses` and create an IVFFlat cosine index on it via the SQL Editor. Update `supabase/schema.sql`, `lib/supabase/types.ts`, and run the ALTER SQL before testing. Supabase IVFFlat/HNSW indexes support at most 2000 dimensions — keep embeddings ≤2000 (this project uses 1536).
 
-Update the `/api/analyze` route to also call an OpenRouter embedding model for each article alongside the existing analysis call and save the result to `article_analyses.embedding`. Default embedding model: `openai/text-embedding-3-small` via OpenRouter (1536 dimensions — match the pgvector column). Set via `OPENROUTER_EMBEDDING_MODEL` when needed. Update `analyzed_at` only after both analysis and embedding are saved. Because pending detection uses LEFT JOIN logic (see section 19), articles whose `article_analyses` row exists but has `embedding IS NULL` will automatically be picked up for embedding backfill on the next run without re-running the full analysis.
+Update the `/api/analyze` route to also call an OpenRouter embedding model for each article alongside the existing analysis call and save the result to `article_analyses.embedding`. Default embedding model: `openai/text-embedding-3-small` via OpenRouter (1536 dimensions — match the pgvector column). Set via `OPENROUTER_EMBEDDING_MODEL` when needed (must output 1536 dims). Update `analyzed_at` only after both analysis and embedding are saved. Because pending detection uses LEFT JOIN logic (see section 19), articles whose `article_analyses` row exists but has `embedding IS NULL` will automatically be picked up for embedding backfill on the next run without re-running the full analysis.
 <!-- Previously: call OpenAI `text-embedding-3-small` direct via `OPENAI_API_KEY`. -->
 
 To find related articles, query `article_analyses` joined to `articles` and `sources`, filter to rows where the embedding is not null and the article is analyzed and is not the current article, then order by cosine distance (`<=>`) to the current article's embedding and limit to 5 results.
@@ -656,21 +656,21 @@ Never run from browser code:
 
 Canonical list lives in `.env.example`. Only `NEXT_PUBLIC_*` values may reach browser code; everything else is server-only. `CRON_SECRET` is injected by Vercel and must not be added to `.env.local`.
 
-| Variable                                                                      | Purpose                                                                                 | Exposure        |
-| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------- |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`                                           | Clerk publishable key                                                                   | client + server |
-| `CLERK_SECRET_KEY`                                                            | Clerk server-side key                                                                   | server only     |
-| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` / `_SIGN_UP_URL` / `_*_FALLBACK_REDIRECT_URL` | Clerk auth route config                                                                 | client + server |
-| `NEXT_PUBLIC_SUPABASE_URL`                                                    | Supabase project URL                                                                    | client + server |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`                                               | Supabase anon key                                                                       | client + server |
-| `SUPABASE_SERVICE_ROLE_KEY`                                                   | Service-role DB access for writes and pipeline reads                                    | server only     |
-| `OXY_WSA_USERNAME` / `OXY_WSA_PASSWORD`                                       | Oxylabs Web Scraper API + Scheduler auth                                                | server only     |
-| `OPENROUTER_API_KEY`                                                          | OpenRouter auth for AI analysis and embeddings                                          | server only     |
-| `OPENROUTER_ANALYSIS_MODEL`                                                   | OpenRouter model id for analysis (e.g. `openai/gpt-oss-20b:free`, `openai/gpt-4o-mini`) | server only     |
-| `OPENROUTER_EMBEDDING_MODEL`                                                  | Optional; OpenRouter embedding model (default `openai/text-embedding-3-small`, §20)     | server only     |
-| `BIASLY_ADMIN_SECRET`                                                         | Shared secret for `x-biasly-admin-secret` on action routes (section 15)                 | server only     |
-| `ANALYSIS_BATCH_SIZE`                                                         | Optional; articles analyzed per batch (default 5)                                       | server only     |
-| `CRON_SECRET`                                                                 | Protects `GET /api/cron/pipeline`; injected by Vercel, not in `.env.local` (section 18) | server only     |
+| Variable                                                                      | Purpose                                                                                        | Exposure        |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | --------------- |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`                                           | Clerk publishable key                                                                          | client + server |
+| `CLERK_SECRET_KEY`                                                            | Clerk server-side key                                                                          | server only     |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` / `_SIGN_UP_URL` / `_*_FALLBACK_REDIRECT_URL` | Clerk auth route config                                                                        | client + server |
+| `NEXT_PUBLIC_SUPABASE_URL`                                                    | Supabase project URL                                                                           | client + server |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`                                               | Supabase anon key                                                                              | client + server |
+| `SUPABASE_SERVICE_ROLE_KEY`                                                   | Service-role DB access for writes and pipeline reads                                           | server only     |
+| `OXY_WSA_USERNAME` / `OXY_WSA_PASSWORD`                                       | Oxylabs Web Scraper API + Scheduler auth                                                       | server only     |
+| `OPENROUTER_API_KEY`                                                          | OpenRouter auth for AI analysis and embeddings                                                 | server only     |
+| `OPENROUTER_ANALYSIS_MODEL`                                                   | OpenRouter model id for analysis (e.g. `openai/gpt-oss-20b:free`, `openai/gpt-4o-mini`)        | server only     |
+| `OPENROUTER_EMBEDDING_MODEL`                                                  | Optional; OpenRouter embedding model (default `openai/text-embedding-3-small`, 1536 dims, §20) | server only     |
+| `BIASLY_ADMIN_SECRET`                                                         | Shared secret for `x-biasly-admin-secret` on action routes (section 15)                        | server only     |
+| `ANALYSIS_BATCH_SIZE`                                                         | Optional; articles analyzed per batch (default 5)                                              | server only     |
+| `CRON_SECRET`                                                                 | Protects `GET /api/cron/pipeline`; injected by Vercel, not in `.env.local` (section 18)        | server only     |
 
 Keep this table and `.env.example` in sync when variables change.
 

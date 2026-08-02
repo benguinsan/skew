@@ -2,11 +2,16 @@ import "server-only";
 
 import { generateText, Output } from "ai";
 import { getAnalysisModel, getAnalysisModelId } from "@/lib/ai/client";
+import { embedArticle } from "@/lib/ai/embed-article";
 import {
   articleAnalysisOutputSchema,
   mapAnalysisOutputToInsert,
 } from "@/lib/ai/schema";
-import { upsertAnalysis } from "@/lib/supabase/queries/analyses";
+import {
+  updateAnalysisEmbedding,
+  upsertAnalysis,
+  type PendingAnalysisMode,
+} from "@/lib/supabase/queries/analyses";
 import { markArticleAnalyzed } from "@/lib/supabase/queries/articles";
 import type { Article } from "@/lib/supabase/types";
 
@@ -32,13 +37,15 @@ Rules:
 
 export type AnalyzeArticleSuccess = {
   ok: true;
-  analysisId: string;
+  analysisId?: string;
+  mode: PendingAnalysisMode;
 };
 
 export type AnalyzeArticleFailure = {
   ok: false;
   reason: "skipped" | "failed";
   message: string;
+  mode: PendingAnalysisMode;
 };
 
 export type AnalyzeArticleResult =
@@ -64,6 +71,31 @@ Body:
 ${body}`;
 }
 
+function validateArticleContent(
+  article: Article,
+  mode: PendingAnalysisMode,
+): AnalyzeArticleFailure | null {
+  if (!article.raw_text.trim() || !article.title.trim()) {
+    return {
+      ok: false,
+      reason: "skipped",
+      message: "Missing title or raw_text",
+      mode,
+    };
+  }
+
+  if (!article.image_url || !article.published_at) {
+    return {
+      ok: false,
+      reason: "skipped",
+      message: "Missing image_url or published_at",
+      mode,
+    };
+  }
+
+  return null;
+}
+
 async function generateValidatedAnalysis(article: Article) {
   const modelId = getAnalysisModelId();
   const { output } = await generateText({
@@ -86,35 +118,73 @@ async function generateValidatedAnalysis(article: Article) {
   };
 }
 
+async function embedWithRetry(article: Article): Promise<number[]> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const { embedding, modelId } = await embedArticle(article);
+      console.log(
+        `[analyze] embedding ok article=${article.id} model=${modelId} attempt=${attempt}`,
+      );
+      return embedding;
+    } catch (error) {
+      lastError = error;
+      const message =
+        error instanceof Error ? error.message : "Unknown embedding error";
+      console.warn(
+        `[analyze] embedding attempt ${attempt} failed article=${article.id}: ${message}`,
+      );
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("Embedding failed");
+}
+
 /**
- * Analyze one article with OpenRouter, validate, upsert analysis, then set analyzed_at.
- * Retries the model call once if generation/validation fails.
+ * Embedding-only backfill for rows that already have analysis (AGENTS §20).
  */
-export async function analyzeAndSaveArticle(
+async function backfillEmbedding(
   article: Article,
 ): Promise<AnalyzeArticleResult> {
-  if (!article.raw_text.trim() || !article.title.trim()) {
-    return {
-      ok: false,
-      reason: "skipped",
-      message: "Missing title or raw_text",
-    };
-  }
+  const mode: PendingAnalysisMode = "embedding";
+  const invalid = validateArticleContent(article, mode);
+  if (invalid) return invalid;
 
-  if (!article.image_url || !article.published_at) {
-    return {
-      ok: false,
-      reason: "skipped",
-      message: "Missing image_url or published_at",
-    };
+  try {
+    const embedding = await embedWithRetry(article);
+    await updateAnalysisEmbedding(article.id, embedding);
+    if (!article.analyzed_at) {
+      await markArticleAnalyzed(article.id);
+    }
+    console.log(
+      `[analyze] embedding backfill ok article=${article.id} "${titleSnippet(article.title)}"`,
+    );
+    return { ok: true, mode };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Embedding backfill failed";
+    return { ok: false, reason: "failed", message, mode };
   }
+}
+
+/**
+ * Full analysis + embedding. Upserts both in one write, then sets analyzed_at
+ * only after a successful save (AGENTS §19–20).
+ */
+async function analyzeFull(article: Article): Promise<AnalyzeArticleResult> {
+  const mode: PendingAnalysisMode = "full";
+  const invalid = validateArticleContent(article, mode);
+  if (invalid) return invalid;
 
   let lastError: unknown;
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const { parsed, modelId } = await generateValidatedAnalysis(article);
-      const insert = mapAnalysisOutputToInsert(article.id, parsed, modelId);
+      const embedding = await embedWithRetry(article);
+      const insert = {
+        ...mapAnalysisOutputToInsert(article.id, parsed, modelId),
+        embedding,
+      };
       const saved = await upsertAnalysis(insert);
       await markArticleAnalyzed(article.id);
 
@@ -122,7 +192,7 @@ export async function analyzeAndSaveArticle(
         `[analyze] ok article=${article.id} "${titleSnippet(article.title)}" attempt=${attempt}`,
       );
 
-      return { ok: true, analysisId: saved.id };
+      return { ok: true, analysisId: saved.id, mode };
     } catch (error) {
       lastError = error;
       const message =
@@ -135,5 +205,18 @@ export async function analyzeAndSaveArticle(
 
   const message =
     lastError instanceof Error ? lastError.message : "Analysis failed";
-  return { ok: false, reason: "failed", message };
+  return { ok: false, reason: "failed", message, mode };
+}
+
+/**
+ * Process one pending article: full analysis+embedding, or embedding backfill.
+ */
+export async function analyzeAndSaveArticle(
+  article: Article,
+  mode: PendingAnalysisMode = "full",
+): Promise<AnalyzeArticleResult> {
+  if (mode === "embedding") {
+    return backfillEmbedding(article);
+  }
+  return analyzeFull(article);
 }

@@ -16,7 +16,8 @@ import {
 } from "@/lib/articles/present";
 import {
   getArticleDetailById,
-  getRelatedAnalyzedArticles,
+  getRelatedArticles,
+  parseEmbedding,
 } from "@/lib/supabase/queries/articles";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +51,10 @@ export default async function NewsDetailsPage({
   }
 
   const article = toArticleDetailView(detail);
-  const relatedCards = await getRelatedAnalyzedArticles(article.id);
+  const embedding = parseEmbedding(detail.analysis.embedding);
+  const relatedCards = embedding
+    ? await getRelatedArticles(article.id, embedding)
+    : [];
   const related = relatedCards.map(toRelatedStoryView);
   const sourcesLabel =
     article.sourceCount === 1 ? "1 source" : `${article.sourceCount} sources`;
