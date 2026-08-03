@@ -1,7 +1,11 @@
+"use client";
+
+import posthog from "posthog-js";
 import { InfoIcon } from "@/components/icons";
 import { BiasMeter } from "@/components/ui/bias-meter";
 
 export type ArticleCardProps = {
+  articleId: string;
   title: string;
   category: string;
   region: string;
@@ -17,6 +21,7 @@ export type ArticleCardProps = {
 };
 
 export function ArticleCard({
+  articleId,
   title,
   category,
   region,
@@ -34,7 +39,18 @@ export function ArticleCard({
 
   return (
     <article className={["flex flex-col gap-3", className].join(" ")}>
-      <a href={href} className="group block focus-visible:outline-none">
+      <a
+        href={href}
+        className="group block focus-visible:outline-none"
+        onClick={() => {
+          posthog.capture("article_opened", {
+            article_id: articleId,
+            category,
+            region,
+            source_count: sourceCount,
+          });
+        }}
+      >
         <div
           className={[
             "relative aspect-16/10 overflow-hidden rounded-lg",
@@ -68,6 +84,14 @@ export function ArticleCard({
           <a
             href={href}
             className="transition-opacity hover:opacity-80 focus-visible:underline focus-visible:outline-none"
+            onClick={() => {
+              posthog.capture("article_opened", {
+                article_id: articleId,
+                category,
+                region,
+                source_count: sourceCount,
+              });
+            }}
           >
             {title}
           </a>

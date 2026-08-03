@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import posthog from "posthog-js";
 import type { RelatedStoryView } from "@/lib/articles/present";
 
 type RelatedStoryCardProps = {
@@ -13,6 +16,13 @@ export function RelatedStoryCard({ story }: RelatedStoryCardProps) {
         className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-bg-secondary"
         aria-hidden="true"
         tabIndex={-1}
+        onClick={() => {
+          posthog.capture("related_article_opened", {
+            article_id: story.id,
+            category: story.category,
+            region: story.region,
+          });
+        }}
       >
         {story.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- scraped/CDN hosts vary
@@ -33,6 +43,13 @@ export function RelatedStoryCard({ story }: RelatedStoryCardProps) {
           <Link
             href={`/news/${story.id}`}
             className="transition-opacity hover:opacity-80 focus-visible:underline focus-visible:outline-none"
+            onClick={() => {
+              posthog.capture("related_article_opened", {
+                article_id: story.id,
+                category: story.category,
+                region: story.region,
+              });
+            }}
           >
             {story.title}
           </Link>
