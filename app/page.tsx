@@ -29,6 +29,7 @@ export default async function Home() {
               {articles.map((article) => (
                 <ArticleCard
                   key={article.id}
+                  articleId={article.id}
                   title={article.title}
                   category={homeCardCategory()}
                   region={homeCardRegion(article)}

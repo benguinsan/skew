@@ -1,6 +1,9 @@
 import type { ArticleCardProps } from "@/components/news/article-card";
 
-export type MockArticle = Omit<ArticleCardProps, "className" | "href"> & {
+export type MockArticle = Omit<
+  ArticleCardProps,
+  "articleId" | "className" | "href"
+> & {
   id: string;
 };
 
