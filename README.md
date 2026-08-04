@@ -13,16 +13,16 @@ UI only **displays stored data**. Scraping, AI, and DB writes run on the server 
 
 ## Stack
 
-| Layer | Tech |
-| ----- | ---- |
-| App | Next.js (App Router), TypeScript, Tailwind CSS, shadcn-style UI |
-| Auth | Clerk |
-| Database | Supabase (Postgres + RLS + pgvector) |
-| Scraping | Oxylabs Web Scraper API + Cheerio parsing |
-| AI | Vercel AI SDK + OpenRouter (analysis + embeddings) |
-| Analytics | PostHog (optional client) |
-| Quality | ESLint, Prettier, `tsc`, GitHub Actions CI |
-| Run / deploy (dev) | **Docker Compose** — app on port **5173** |
+| Layer              | Tech                                                            |
+| ------------------ | --------------------------------------------------------------- |
+| App                | Next.js (App Router), TypeScript, Tailwind CSS, shadcn-style UI |
+| Auth               | Clerk                                                           |
+| Database           | Supabase (Postgres + RLS + pgvector)                            |
+| Scraping           | Oxylabs Web Scraper API + Cheerio parsing                       |
+| AI                 | Vercel AI SDK + OpenRouter (analysis + embeddings)              |
+| Analytics          | PostHog (optional client)                                       |
+| Quality            | ESLint, Prettier, `tsc`, GitHub Actions CI                      |
+| Run / deploy (dev) | **Docker Compose** — app on port **5173**                       |
 
 ## Architecture (high level)
 
@@ -109,21 +109,22 @@ docker compose down --rmi local --remove-orphans \
 Compose maps host **5173 → container 5173**, bind-mounts the repo for live reload, and keeps `node_modules` / `.next` as container volumes. More detail: [`README.Docker.md`](README.Docker.md).
 
 Host `npm run dev` (port 3000) is optional for quick checks only; day-to-day development follows Docker.
+
 ## Environment
 
 Canonical list: [`.env.example`](.env.example). Only `NEXT_PUBLIC_*` may reach the browser.
 
-| Variable | Purpose |
-| -------- | ------- |
-| `NEXT_PUBLIC_CLERK_*` / `CLERK_SECRET_KEY` | Auth |
-| `NEXT_PUBLIC_SUPABASE_*` / `SUPABASE_SERVICE_ROLE_KEY` | DB (service role = server only) |
-| `OXY_WSA_USERNAME` / `OXY_WSA_PASSWORD` | Oxylabs scrape |
-| `BIASLY_ADMIN_SECRET` | Protects mutating API routes (`x-biasly-admin-secret`) |
-| `OPENROUTER_API_KEY` | Analysis + embeddings |
-| `OPENROUTER_ANALYSIS_MODEL` | Chat model id (e.g. free or paid OpenRouter models) |
-| `OPENROUTER_EMBEDDING_MODEL` | Default `openai/text-embedding-3-small` (1536 dims) |
-| `NEXT_PUBLIC_POSTHOG_*` | Optional analytics |
-| `CRON_SECRET` | Vercel Cron only — do **not** put in `.env.local` |
+| Variable                                               | Purpose                                                |
+| ------------------------------------------------------ | ------------------------------------------------------ |
+| `NEXT_PUBLIC_CLERK_*` / `CLERK_SECRET_KEY`             | Auth                                                   |
+| `NEXT_PUBLIC_SUPABASE_*` / `SUPABASE_SERVICE_ROLE_KEY` | DB (service role = server only)                        |
+| `OXY_WSA_USERNAME` / `OXY_WSA_PASSWORD`                | Oxylabs scrape                                         |
+| `BIASLY_ADMIN_SECRET`                                  | Protects mutating API routes (`x-biasly-admin-secret`) |
+| `OPENROUTER_API_KEY`                                   | Analysis + embeddings                                  |
+| `OPENROUTER_ANALYSIS_MODEL`                            | Chat model id (e.g. free or paid OpenRouter models)    |
+| `OPENROUTER_EMBEDDING_MODEL`                           | Default `openai/text-embedding-3-small` (1536 dims)    |
+| `NEXT_PUBLIC_POSTHOG_*`                                | Optional analytics                                     |
+| `CRON_SECRET`                                          | Vercel Cron only — do **not** put in `.env.local`      |
 
 Never expose service role, Oxylabs, OpenRouter, or admin secrets to client code.
 
@@ -162,6 +163,7 @@ curl -s -X POST 'http://localhost:5173/api/analyze' \
 ```
 
 Other read routes: `GET /api/sources`, `GET /api/logs` (same base URL).
+
 ## Project layout
 
 ```
